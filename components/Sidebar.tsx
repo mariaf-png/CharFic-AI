@@ -1,7 +1,7 @@
 
 import React from 'react';
-import { Story, AppView, Language, Theme } from '../types';
-import { TRANSLATIONS } from '../constants';
+import { Story, AppView, Language, Theme } from '../types.ts';
+import { TRANSLATIONS } from '../constants.tsx';
 
 interface SidebarProps {
   stories: Story[];

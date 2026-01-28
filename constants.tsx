@@ -1,5 +1,5 @@
 
-import { PromptIdea, WritingModel, Language } from './types';
+import { PromptIdea, WritingModel, Language } from './types.ts';
 
 export const TRANSLATIONS = {
   pt: {

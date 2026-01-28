@@ -1,23 +1,27 @@
 
 import React, { useState, useEffect } from 'react';
-import { Layout } from './components/Layout';
-import { Sidebar } from './components/Sidebar';
-import { ChatArea } from './components/ChatArea';
-import { IdeaBank } from './components/IdeaBank';
-import { SettingsModal } from './components/SettingsModal';
-import { CommunityView } from './components/CommunityView';
-import { Message, Story, AppView, WritingModel, Theme, Language, User, FontFamily, FontSize } from './types';
-import { generateStoryPart } from './services/geminiService';
+import { Layout } from './components/Layout.tsx';
+import { Sidebar } from './components/Sidebar.tsx';
+import { ChatArea } from './components/ChatArea.tsx';
+import { IdeaBank } from './components/IdeaBank.tsx';
+import { SettingsModal } from './components/SettingsModal.tsx';
+import { CommunityView } from './components/CommunityView.tsx';
+import { Message, Story, AppView, WritingModel, Theme, Language, User, FontFamily, FontSize } from './types.ts';
+import { generateStoryPart } from './services/geminiService.ts';
 
 const App: React.FC = () => {
   const [stories, setStories] = useState<Story[]>(() => {
-    const saved = localStorage.getItem('chatfic_stories');
-    return saved ? JSON.parse(saved) : [];
+    try {
+      const saved = localStorage.getItem('chatfic_stories');
+      return saved ? JSON.parse(saved) : [];
+    } catch { return []; }
   });
 
   const [communityStories, setCommunityStories] = useState<Story[]>(() => {
-    const saved = localStorage.getItem('chatfic_community');
-    return saved ? JSON.parse(saved) : [];
+    try {
+      const saved = localStorage.getItem('chatfic_community');
+      return saved ? JSON.parse(saved) : [];
+    } catch { return []; }
   });
   
   const [currentStoryId, setCurrentStoryId] = useState<string | null>(() => {
@@ -30,8 +34,10 @@ const App: React.FC = () => {
   const [fontSize, setFontSize] = useState<FontSize>(() => (localStorage.getItem('chatfic_font_size') as FontSize) || 'base');
   
   const [user, setUser] = useState<User | null>(() => {
-    const savedUser = localStorage.getItem('chatfic_user');
-    return savedUser ? JSON.parse(savedUser) : null;
+    try {
+      const savedUser = localStorage.getItem('chatfic_user');
+      return savedUser ? JSON.parse(savedUser) : null;
+    } catch { return null; }
   });
 
   const [view, setView] = useState<AppView>('chat');
@@ -48,6 +54,10 @@ const App: React.FC = () => {
   }, [communityStories]);
 
   useEffect(() => {
+    localStorage.setItem('chatfic_current_id', currentStoryId || '');
+  }, [currentStoryId]);
+
+  useEffect(() => {
     const root = window.document.documentElement;
     if (theme === 'dark') root.classList.add('dark');
     else root.classList.remove('dark');
@@ -57,19 +67,6 @@ const App: React.FC = () => {
   useEffect(() => {
     localStorage.setItem('chatfic_lang', lang);
   }, [lang]);
-
-  useEffect(() => {
-    localStorage.setItem('chatfic_font', fontFamily);
-  }, [fontFamily]);
-
-  useEffect(() => {
-    localStorage.setItem('chatfic_font_size', fontSize);
-  }, [fontSize]);
-
-  useEffect(() => {
-    if (user) localStorage.setItem('chatfic_user', JSON.stringify(user));
-    else localStorage.removeItem('chatfic_user');
-  }, [user]);
 
   const toggleTheme = () => setTheme(prev => prev === 'light' ? 'dark' : 'light');
 

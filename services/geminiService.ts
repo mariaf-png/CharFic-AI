@@ -1,12 +1,11 @@
 
 import { GoogleGenAI } from "@google/genai";
-import { getSystemInstruction } from "../constants";
-import { Message, WritingModel } from "../types";
+import { getSystemInstruction } from "../constants.tsx";
+import { Message, WritingModel } from "../types.ts";
 
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 export async function generateStoryPart(messages: Message[], modelType: WritingModel, universe: string): Promise<string> {
-  // Use gemini-3-pro-preview for complex reasoning and high-quality creative writing
   const modelName = 'gemini-3-pro-preview';
   
   const history = messages.map(m => ({

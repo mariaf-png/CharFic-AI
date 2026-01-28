@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
-import { Story, Language } from '../types';
-import { TRANSLATIONS } from '../constants';
+import { Story, Language } from '../types.ts';
+import { TRANSLATIONS } from '../constants.tsx';
 
 interface CommunityViewProps {
   stories: Story[];

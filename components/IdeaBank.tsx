@@ -1,7 +1,7 @@
 
 import React from 'react';
-import { IDEAS } from '../constants';
-import { PromptIdea } from '../types';
+import { IDEAS } from '../constants.tsx';
+import { PromptIdea } from '../types.ts';
 
 interface IdeaBankProps {
   onUseIdea: (idea: PromptIdea) => void;

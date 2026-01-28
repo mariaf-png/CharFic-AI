@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
-import { Theme, Language, User, FontFamily, FontSize } from '../types';
-import { TRANSLATIONS } from '../constants';
+import { Theme, Language, User, FontFamily, FontSize } from '../types.ts';
+import { TRANSLATIONS } from '../constants.tsx';
 
 interface SettingsModalProps {
   onClose: () => void;
