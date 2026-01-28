@@ -23,8 +23,7 @@ interface SettingsModalProps {
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({ 
   onClose, theme, setTheme, lang, setLang, user, setUser,
-  fontFamily, setFontFamily, fontSize, setFontSize,
-  currentStory, onPublishStory, onDeleteStory, onExport
+  fontFamily, setFontFamily, fontSize, setFontSize
 }) => {
   const [isLoginView, setIsLoginView] = useState(true);
   const [email, setEmail] = useState('');
@@ -40,13 +39,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
       name: name || 'Escritor Criativo', 
       email: email || 'autor@chatfic.ai' 
     });
-  };
-
-  const handleShare = () => {
-    if (!currentStory) return;
-    const shareUrl = `${window.location.origin}${window.location.pathname}?share=${btoa(unescape(encodeURIComponent(JSON.stringify(currentStory))))}`;
-    navigator.clipboard.writeText(shareUrl);
-    alert(t.link_copied);
   };
 
   const fontOptions: { id: FontFamily; label: string; class: string }[] = [
@@ -151,32 +143,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             </div>
           </section>
 
-          {/* Gerenciamento do Chat */}
-          {currentStory && (
-            <section className="space-y-4 animate-in slide-in-from-bottom-2 duration-400">
-              <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Controle da História</h3>
-              <div className="flex flex-col gap-2">
-                <div className="grid grid-cols-2 gap-2">
-                  <button onClick={() => onExport('md')} className="flex items-center justify-center gap-2 px-4 py-4 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 rounded-2xl font-black text-[10px] uppercase tracking-widest border-2 border-gray-50 dark:border-zinc-700 hover:border-indigo-500 transition-all">
-                    <span>💾</span> Markdown
-                  </button>
-                  <button onClick={() => onExport('pdf')} className="flex items-center justify-center gap-2 px-4 py-4 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 rounded-2xl font-black text-[10px] uppercase tracking-widest border-2 border-gray-50 dark:border-zinc-700 hover:border-indigo-500 transition-all">
-                    <span>🖨️</span> PDF
-                  </button>
-                </div>
-                <button onClick={handleShare} className="flex items-center gap-3 px-6 py-4 bg-indigo-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg shadow-indigo-600/30 active:scale-95 transition-all">
-                   <span>🔗</span> {t.share_link}
-                </button>
-                <button onClick={() => { onPublishStory(currentStory); onClose(); }} className="flex items-center gap-3 px-6 py-4 bg-indigo-50 dark:bg-indigo-900/10 text-indigo-600 rounded-2xl font-black text-xs uppercase tracking-widest transition-all hover:bg-indigo-100">
-                   <span>🌍</span> {t.publish_community}
-                </button>
-                <button onClick={() => { if(confirm(t.delete_confirm)) { onDeleteStory(currentStory.id); onClose(); } }} className="flex items-center gap-3 px-6 py-4 bg-red-50 dark:bg-red-900/10 text-red-500 rounded-2xl font-black text-xs uppercase tracking-widest transition-all hover:bg-red-100">
-                   <span>🗑️</span> {t.delete_chat}
-                </button>
-              </div>
-            </section>
-          )}
-
           {/* Visual da Prosa */}
           <section className="space-y-6">
             <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Estética Literária</h3>
@@ -215,7 +181,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         </div>
 
         <div className="p-8 border-t border-gray-50 dark:border-zinc-800 text-center bg-gray-50/50 dark:bg-zinc-900/50">
-          <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">ChatFic AI • Build 1.9</p>
+          <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">ChatFic AI • Build 2.0</p>
         </div>
       </div>
     </div>

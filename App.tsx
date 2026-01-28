@@ -26,7 +26,8 @@ const App: React.FC = () => {
   });
   
   const [currentStoryId, setCurrentStoryId] = useState<string | null>(() => {
-    return localStorage.getItem('chatfic_current_id');
+    const savedId = localStorage.getItem('chatfic_current_id');
+    return savedId && savedId !== '' && savedId !== 'null' ? savedId : null;
   });
 
   const [theme, setTheme] = useState<Theme>(() => (localStorage.getItem('chatfic_theme') as Theme) || 'light');
@@ -66,7 +67,13 @@ const App: React.FC = () => {
 
   useEffect(() => { localStorage.setItem('chatfic_stories', JSON.stringify(stories)); }, [stories]);
   useEffect(() => { localStorage.setItem('chatfic_community', JSON.stringify(communityStories)); }, [communityStories]);
-  useEffect(() => { localStorage.setItem('chatfic_current_id', currentStoryId || ''); }, [currentStoryId]);
+  useEffect(() => { 
+    if (currentStoryId) {
+      localStorage.setItem('chatfic_current_id', currentStoryId); 
+    } else {
+      localStorage.removeItem('chatfic_current_id');
+    }
+  }, [currentStoryId]);
 
   useEffect(() => {
     const root = window.document.documentElement;
@@ -129,7 +136,6 @@ const App: React.FC = () => {
     const story = stories.find(s => s.id === currentStoryId);
     if (!story) return;
 
-    // Remove the message being regenerated and any messages after it
     const msgIndex = story.messages.findIndex(m => m.id === messageId);
     if (msgIndex === -1) return;
 
@@ -172,8 +178,20 @@ const App: React.FC = () => {
   };
 
   const handleDeleteStory = (id: string) => {
-    setStories(s => s.filter(x => x.id !== id));
-    if(currentStoryId === id) { setCurrentStoryId(null); setSharedStory(null); }
+    // 1. Removemos do array de histórias primeiro
+    setStories(prev => prev.filter(x => x.id !== id));
+    
+    // 2. Limpamos os IDs atuais SE for a história que estamos vendo
+    if (currentStoryId === id) {
+      setCurrentStoryId(null);
+      localStorage.removeItem('chatfic_current_id');
+    }
+    if (sharedStory && sharedStory.id === id) {
+      setSharedStory(null);
+    }
+    
+    // 3. Voltamos para a view de chat limpa
+    setView('chat');
   };
 
   const handleDeleteMessage = (id: string) => {
