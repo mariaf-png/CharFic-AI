@@ -8,6 +8,7 @@ import { SettingsModal } from './components/SettingsModal.tsx';
 import { CommunityView } from './components/CommunityView.tsx';
 import { Message, Story, AppView, WritingModel, Theme, Language, User, FontFamily, FontSize } from './types.ts';
 import { generateStoryPart } from './services/geminiService.ts';
+import { TRANSLATIONS } from './constants.tsx';
 
 const App: React.FC = () => {
   const [stories, setStories] = useState<Story[]>(() => {
@@ -44,6 +45,37 @@ const App: React.FC = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  
+  const [sharedStory, setSharedStory] = useState<Story | null>(null);
+
+  // Sistema de importação de história via URL (Share Link)
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const shareData = urlParams.get('share');
+    if (shareData) {
+      try {
+        // Remove espaços ou caracteres estranhos que podem quebrar o Base64
+        const cleanShareData = shareData.replace(/ /g, '+');
+        const decoded = decodeURIComponent(escape(atob(cleanShareData)));
+        const story = JSON.parse(decoded) as Story;
+        
+        // Verifica se a história já existe no histórico
+        const alreadyExists = stories.some(s => s.id === story.id);
+        if (!alreadyExists) {
+          setStories(prev => [story, ...prev]);
+        }
+        
+        setCurrentStoryId(story.id);
+        setSharedStory(story);
+        setView('chat');
+
+        // Limpa a URL para não ficar com aquele código gigante poluindo a barra de endereço
+        window.history.replaceState({}, '', window.location.pathname);
+      } catch (e) {
+        console.error("Erro ao carregar história compartilhada", e);
+      }
+    }
+  }, [stories.length]);
 
   useEffect(() => {
     localStorage.setItem('chatfic_stories', JSON.stringify(stories));
@@ -64,18 +96,19 @@ const App: React.FC = () => {
     localStorage.setItem('chatfic_theme', theme);
   }, [theme]);
 
-  useEffect(() => {
-    localStorage.setItem('chatfic_lang', lang);
-  }, [lang]);
-
   const toggleTheme = () => setTheme(prev => prev === 'light' ? 'dark' : 'light');
 
-  const currentStory = stories.find(s => s.id === currentStoryId) || null;
+  const currentStory = stories.find(s => s.id === currentStoryId) || sharedStory || null;
 
   const handleSendMessage = async (content: string, setup?: { title: string, universe: string, model: WritingModel }) => {
     let activeStoryId = currentStoryId;
     let activeUniverse = currentStory?.universe || setup?.universe || 'Original';
     let activeModel = currentStory?.model || setup?.model || 'balanced';
+
+    // Se estiver em modo de visualização de compartilhado, transforma em história local definitiva ao interagir
+    if (sharedStory && currentStoryId === sharedStory.id) {
+       setSharedStory(null);
+    }
 
     if (!activeStoryId && setup) {
       const newStory: Story = {
@@ -100,7 +133,7 @@ const App: React.FC = () => {
     setIsGenerating(true);
     
     try {
-      const currentStoryRef = stories.find(s => s.id === activeStoryId);
+      const currentStoryRef = stories.find(s => s.id === activeStoryId) || (activeStoryId === sharedStory?.id ? sharedStory : null);
       const messagesToGen = currentStoryRef ? [...currentStoryRef.messages, userMsg] : [userMsg];
       const aiResponse = await generateStoryPart(messagesToGen, activeModel, activeUniverse);
       
@@ -119,14 +152,12 @@ const App: React.FC = () => {
     }
   };
 
-  const handleDeleteMessage = (messageId: string) => {
-    if (!currentStoryId) return;
-    setStories(prev => prev.map(s => s.id === currentStoryId ? { ...s, messages: s.messages.filter(m => m.id !== messageId), updatedAt: Date.now() } : s));
-  };
-
   const handleDeleteStory = (id: string) => {
     setStories(s => s.filter(x => x.id !== id));
-    if(currentStoryId === id) setCurrentStoryId(null);
+    if(currentStoryId === id) {
+      setCurrentStoryId(null);
+      setSharedStory(null);
+    }
   };
 
   return (
@@ -137,8 +168,8 @@ const App: React.FC = () => {
         <Sidebar 
           stories={stories} 
           currentStoryId={currentStoryId}
-          onSelectStory={(id) => { setCurrentStoryId(id); setView('chat'); setIsSidebarOpen(false); }}
-          onNewStory={() => { setCurrentStoryId(null); setView('chat'); setIsSidebarOpen(false); }}
+          onSelectStory={(id) => { setSharedStory(null); setCurrentStoryId(id); setView('chat'); setIsSidebarOpen(false); }}
+          onNewStory={() => { setSharedStory(null); setCurrentStoryId(null); setView('chat'); setIsSidebarOpen(false); }}
           onDeleteStory={handleDeleteStory}
           setView={setView}
           currentView={view}
@@ -149,13 +180,19 @@ const App: React.FC = () => {
         />
       }
     >
+      {sharedStory && (
+        <div className="bg-indigo-600 text-white px-4 py-2 text-center text-[10px] font-black uppercase tracking-widest animate-in fade-in slide-in-from-top-2 z-50">
+          {TRANSLATIONS[lang].view_mode} • <button onClick={() => { setSharedStory(null); setCurrentStoryId(null); }} className="underline ml-2">{TRANSLATIONS[lang].exit_view}</button>
+        </div>
+      )}
+
       {view === 'chat' && (
         <ChatArea 
           story={currentStory} 
           onSendMessage={handleSendMessage}
           isGenerating={isGenerating}
           onEditMessage={(mid, cont) => setStories(s => s.map(st => st.id === currentStoryId ? {...st, messages: st.messages.map(m => m.id === mid ? {...m, content: cont} : m)} : st))}
-          onDeleteMessage={handleDeleteMessage}
+          onDeleteMessage={(mid) => setStories(prev => prev.map(s => s.id === currentStoryId ? { ...s, messages: s.messages.filter(m => m.id !== mid) } : s))}
           onDeleteStory={handleDeleteStory}
           onExport={() => {}}
           onModelChange={(m) => setStories(s => s.map(st => st.id === currentStoryId ? {...st, model: m} : st))}
@@ -166,13 +203,8 @@ const App: React.FC = () => {
         />
       )}
 
-      {view === 'community' && (
-        <CommunityView stories={communityStories} onRead={() => {}} lang={lang} />
-      )}
-
-      {view === 'ideas' && (
-        <IdeaBank onUseIdea={(idea) => {}} />
-      )}
+      {view === 'community' && <CommunityView stories={communityStories} onRead={() => {}} lang={lang} />}
+      {view === 'ideas' && <IdeaBank onUseIdea={(idea) => { setView('chat'); handleSendMessage(idea.prompt, { title: idea.title, universe: 'Misto', model: 'balanced' }); }} />}
 
       {isSettingsOpen && (
         <SettingsModal 

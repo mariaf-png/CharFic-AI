@@ -1,0 +1,10 @@
+
+{
+  "appId": "com.chatfic.ai",
+  "appName": "ChatFic AI",
+  "webDir": "dist",
+  "bundledWebRuntime": false,
+  "server": {
+    "androidScheme": "https"
+  }
+}

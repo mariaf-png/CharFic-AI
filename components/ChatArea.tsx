@@ -83,6 +83,20 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
     setTimeout(() => setShowToast(false), 3000);
   };
 
+  const generateShareLink = () => {
+    if (!story) return;
+    try {
+      const storyData = JSON.stringify(story);
+      const encoded = btoa(unescape(encodeURIComponent(storyData)));
+      const url = `${window.location.origin}${window.location.pathname}?share=${encoded}`;
+      navigator.clipboard.writeText(url);
+      triggerToast(t.link_copied);
+      setIsHeaderMenuOpen(false);
+    } catch (e) {
+      triggerToast("Erro ao gerar link.");
+    }
+  };
+
   const handlePublishClick = () => {
     if (!story) return;
     onPublish(story);
@@ -113,14 +127,14 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
     const lastUserMsg = story.messages.slice(0, msgIndex).reverse().find(m => m.role === 'user');
     
     if (lastUserMsg) {
-      onSendMessage(`[COMANDO DE REESCRITA]: Por favor, tente uma abordagem diferente para esta cena. Explore novos ângulos, reações alternativas dos personagens ou mude levemente o tom da narrativa, mantendo a coerência com o que veio antes. Baseie-se no meu último pedido: ${lastUserMsg.content}`);
+      onSendMessage(`[COMANDO DE REESCRITA]: Por favor, tente uma abordagem diferente para esta cena. Explore novos ângulos ou reações alternativas. Baseie-se no meu último pedido: ${lastUserMsg.content}`);
     }
   };
 
-  const handleExportPDF = () => {
+  const handleExportTXT = () => {
     if (!story) return;
     setIsHeaderMenuOpen(false);
-    const content = `TITLE: ${story.title.toUpperCase()}\nUNIVERSE: ${story.universe}\n\n${story.messages.map(m => `[${m.role === 'user' ? 'AUTOR' : 'IA'}]:\n${m.content}\n`).join('\n')}`;
+    const content = `TÍTULO: ${story.title.toUpperCase()}\nUNIVERSO: ${story.universe}\n\n${story.messages.map(m => `[${m.role === 'user' ? 'AUTOR' : 'CHATFIC AI'}]:\n${m.content}\n`).join('\n')}`;
     const blob = new Blob([content], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -172,7 +186,7 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
   return (
     <div className={`flex-1 flex flex-col h-full bg-white dark:bg-zinc-950 transition-colors overflow-hidden ${fontClass} ${sizeClass}`}>
       {showToast && (
-        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[100] bg-zinc-900 text-white px-6 py-3 rounded-2xl shadow-2xl animate-in fade-in slide-in-from-top-4 duration-300 font-bold text-sm">
+        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[100] bg-indigo-600 text-white px-6 py-3 rounded-2xl shadow-2xl animate-in fade-in slide-in-from-top-4 duration-300 font-bold text-sm">
           {toastMessage}
         </div>
       )}
@@ -207,7 +221,9 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
               {isHeaderMenuOpen && (
                 <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-100">
                   <div className="p-2 space-y-1">
-                    <button onClick={handleExportPDF} className="w-full text-left px-4 py-3 text-xs font-bold hover:bg-gray-50 dark:hover:bg-zinc-800 rounded-xl flex items-center gap-3"><span>📄</span> {t.save_pdf}</button>
+                    <button onClick={generateShareLink} className="w-full text-left px-4 py-3 text-xs font-bold text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-xl flex items-center gap-3"><span>🔗</span> {t.share_link}</button>
+                    <div className="h-px bg-gray-100 dark:bg-zinc-800 my-1" />
+                    <button onClick={handleExportTXT} className="w-full text-left px-4 py-3 text-xs font-bold hover:bg-gray-50 dark:hover:bg-zinc-800 rounded-xl flex items-center gap-3"><span>📄</span> {t.save_pdf}</button>
                     <button onClick={handleExportMarkdown} className="w-full text-left px-4 py-3 text-xs font-bold hover:bg-gray-50 dark:hover:bg-zinc-800 rounded-xl flex items-center gap-3"><span>📝</span> {t.save_markdown}</button>
                     <div className="h-px bg-gray-100 dark:bg-zinc-800 my-1" />
                     <button onClick={handlePublishClick} className="w-full text-left px-4 py-3 text-xs font-bold text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-xl flex items-center gap-3"><span>🌍</span> {t.publish_community}</button>
@@ -228,20 +244,20 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
 
       <div className="flex-1 overflow-y-auto p-6 space-y-8 custom-scrollbar">
         {!story ? (
-          <div className="max-w-2xl mx-auto py-12 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <div className="space-y-2 text-center flex flex-col items-center">
+          <div className="max-w-2xl mx-auto py-12 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 text-center">
+            <div className="space-y-2 flex flex-col items-center">
               <div className="text-8xl mb-6 animate-page-flip">📖</div>
               <h3 className="text-3xl font-black">{t.new_story}</h3>
-              <p className="text-gray-500 dark:text-zinc-400 text-sm">Pronto para escrever sua próxima obra-prima?</p>
+              <p className="text-gray-500 dark:text-zinc-400 text-sm">Escrita colaborativa sem limites.</p>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
               <div className="space-y-2">
                 <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-2">{t.title}</label>
-                <input type="text" value={newTitle} onChange={(e) => setNewTitle(e.target.value)} placeholder="Ex: O Retorno do Rei" className="w-full bg-gray-50 dark:bg-zinc-900 border-0 rounded-2xl px-5 py-4 text-sm outline-none" />
+                <input type="text" value={newTitle} onChange={(e) => setNewTitle(e.target.value)} placeholder="Ex: O Segredo de Hogwarts" className="w-full bg-gray-50 dark:bg-zinc-900 border-0 rounded-2xl px-5 py-4 text-sm outline-none" />
               </div>
               <div className="space-y-2">
                 <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-2">{t.universe}</label>
-                <input type="text" value={newUniverse} onChange={(e) => setNewUniverse(e.target.value)} placeholder="Ex: Senhor dos Anéis" className="w-full bg-gray-50 dark:bg-zinc-900 border-0 rounded-2xl px-5 py-4 text-sm outline-none" />
+                <input type="text" value={newUniverse} onChange={(e) => setNewUniverse(e.target.value)} placeholder="Ex: Harry Potter" className="w-full bg-gray-50 dark:bg-zinc-900 border-0 rounded-2xl px-5 py-4 text-sm outline-none" />
               </div>
             </div>
           </div>
