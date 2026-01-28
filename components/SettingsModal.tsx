@@ -23,6 +23,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 }) => {
   const [isLoginView, setIsLoginView] = useState(true);
   const t = TRANSLATIONS[lang];
+  const hasApiKey = !!process.env.API_KEY && process.env.API_KEY.length > 5;
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,6 +49,15 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         </div>
 
         <div className="px-8 py-4 space-y-8 overflow-y-auto flex-1 max-h-[70vh] custom-scrollbar">
+          {/* Status da Conexão (Novo para Debug) */}
+          <section className="space-y-2">
+             <h3 className="text-xs font-black uppercase tracking-widest text-gray-400">Status do App</h3>
+             <div className={`p-3 rounded-xl text-[10px] font-bold flex items-center gap-2 ${hasApiKey ? 'bg-green-50 text-green-600 dark:bg-green-900/20' : 'bg-red-50 text-red-600 dark:bg-red-900/20'}`}>
+                <div className={`w-2 h-2 rounded-full ${hasApiKey ? 'bg-green-500' : 'bg-red-500 animate-pulse'}`}></div>
+                {hasApiKey ? 'IA Conectada e Pronta' : 'IA Desconectada (Falta Chave API)'}
+             </div>
+          </section>
+
           {/* Conta Section */}
           <section className="space-y-4">
             <h3 className="text-xs font-black uppercase tracking-widest text-gray-400">{t.account}</h3>

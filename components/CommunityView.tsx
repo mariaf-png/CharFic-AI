@@ -6,10 +6,11 @@ import { TRANSLATIONS } from '../constants.tsx';
 interface CommunityViewProps {
   stories: Story[];
   onRead: (story: Story) => void;
+  onOpenSidebar?: () => void;
   lang: Language;
 }
 
-export const CommunityView: React.FC<CommunityViewProps> = ({ stories, onRead, lang }) => {
+export const CommunityView: React.FC<CommunityViewProps> = ({ stories, onRead, onOpenSidebar, lang }) => {
   const t = TRANSLATIONS[lang];
   const [selectedStory, setSelectedStory] = useState<Story | null>(null);
 
@@ -41,10 +42,22 @@ export const CommunityView: React.FC<CommunityViewProps> = ({ stories, onRead, l
   }
 
   return (
-    <div className="flex-1 overflow-y-auto bg-gray-50 dark:bg-zinc-900 p-6 md:p-12">
-      <div className="max-w-6xl mx-auto">
+    <div className="flex-1 overflow-y-auto bg-gray-50 dark:bg-zinc-900 flex flex-col">
+       <header className="h-16 border-b border-gray-100 dark:border-zinc-900 flex items-center px-4 lg:px-6 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl z-20 sticky top-0 lg:hidden">
+          <button 
+            onClick={onOpenSidebar}
+            className="p-2 -ml-1 hover:bg-gray-100 dark:hover:bg-zinc-900 rounded-xl text-gray-500 dark:text-zinc-400 transition-colors"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
+          <h2 className="ml-3 text-sm font-black uppercase tracking-widest">Comunidade</h2>
+      </header>
+
+      <div className="p-6 md:p-12 max-w-6xl mx-auto w-full">
         <header className="mb-12">
-          <h2 className="text-4xl font-black mb-4 tracking-tight">Comunidade ChatFic</h2>
+          <h2 className="text-3xl md:text-4xl font-black mb-4 tracking-tight">Comunidade ChatFic</h2>
           <p className="text-gray-500 dark:text-zinc-400">Descubra e leia as melhores fanfics criadas pela nossa comunidade.</p>
         </header>
 
@@ -56,13 +69,13 @@ export const CommunityView: React.FC<CommunityViewProps> = ({ stories, onRead, l
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {stories.map(story => (
-              <div key={story.id} className="bg-white dark:bg-zinc-800 p-8 rounded-3xl shadow-sm border border-gray-100 dark:border-zinc-700 hover:shadow-xl transition-all group flex flex-col h-full">
+              <div key={story.id} className="bg-white dark:bg-zinc-800 p-6 md:p-8 rounded-3xl shadow-sm border border-gray-100 dark:border-zinc-700 hover:shadow-xl transition-all group flex flex-col h-full">
                 <div className="mb-4">
                   <span className="px-3 py-1 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 text-[10px] font-black uppercase tracking-widest rounded-full">
                     {story.universe}
                   </span>
                 </div>
-                <h3 className="text-2xl font-black mb-4 group-hover:text-indigo-600 transition-colors leading-tight">
+                <h3 className="text-xl md:text-2xl font-black mb-4 group-hover:text-indigo-600 transition-colors leading-tight">
                   {story.title}
                 </h3>
                 <div className="flex-1 mb-8">

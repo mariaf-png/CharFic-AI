@@ -1,20 +1,17 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
 
-# Run and deploy your AI Studio app
+# 🚀 Guia de Correção ChatFic AI (Android Studio)
 
-This contains everything you need to run your app locally.
+Se o Android Studio abrir "vazio" ou sem o elefante do Gradle ativo, siga estes passos:
 
-View your app in AI Studio: https://ai.studio/apps/drive/1c12xFtOc3zVqUk221VZBNtr0EpX7imG1
+1. **FECHE** o Android Studio completamente.
+2. **APAGUE** a pasta `android` no seu VS Code (botão direito -> delete).
+3. **LIMPE O BUILD**: No terminal, rode `rm -rf dist` ou delete a pasta `dist`.
+4. **GERA O SITE NOVO**: `npm run build`
+5. **CRIA O APP DE NOVO**: `npx cap add android`
+6. **SINCRONIZA**: `npx cap sync`
+7. **ABRA**: `npx cap open android`
 
-## Run Locally
-
-**Prerequisites:**  Node.js
-
-
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+### No Android Studio (IMPORTANTE):
+- Olhe para o rodapé (barra inferior). Se houver algo carregando, **ESPERE**.
+- Se ele pedir para atualizar o "Gradle Plugin", clique em **OK** ou **Update**.
+- O botão de "Play" (triângulo verde) só aparece depois que o carregamento no rodapé termina.

@@ -4,13 +4,12 @@ import { getSystemInstruction } from "../constants.tsx";
 import { Message, WritingModel } from "../types.ts";
 
 export async function generateStoryPart(messages: Message[], modelType: WritingModel, universe: string): Promise<string> {
-  // Em apps Android, o process.env pode não ser injetado da mesma forma que na web.
-  const apiKey = process.env.API_KEY;
-
-  console.log("Tentando gerar história com API KEY:", apiKey ? "Configurada" : "AUSENTE");
+  // Tenta pegar a chave do process.env (Vite) ou de uma variável global se injetada pelo Capacitor
+  const apiKey = process.env.API_KEY || (window as any).GEMINI_API_KEY;
 
   if (!apiKey || apiKey.length < 10) {
-    return "⚠️ ERRO DE CONFIGURAÇÃO: Chave de API não encontrada. No Android, certifique-se de que o build foi feito com a chave presente.";
+    console.error("DEBUG: API_KEY NÃO ENCONTRADA.");
+    return "⚠️ CHAVE DE API AUSENTE: O app não encontrou sua chave do Gemini. No Android, verifique se você definiu a variável de ambiente antes do build.";
   }
 
   const ai = new GoogleGenAI({ apiKey });
@@ -35,7 +34,7 @@ export async function generateStoryPart(messages: Message[], modelType: WritingM
 
     return response.text || "A IA não conseguiu gerar uma resposta.";
   } catch (error: any) {
-    console.error("Erro detalhado do Gemini no Android:", error);
-    return `Erro na IA: ${error.message || "Verifique sua conexão"}`;
+    console.error("DETALHES DO ERRO NO ANDROID:", error);
+    return `Erro de Conexão: ${error.message || "A IA está temporariamente indisponível."}`;
   }
 }

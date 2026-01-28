@@ -54,12 +54,10 @@ const App: React.FC = () => {
     const shareData = urlParams.get('share');
     if (shareData) {
       try {
-        // Remove espaços ou caracteres estranhos que podem quebrar o Base64
         const cleanShareData = shareData.replace(/ /g, '+');
         const decoded = decodeURIComponent(escape(atob(cleanShareData)));
         const story = JSON.parse(decoded) as Story;
         
-        // Verifica se a história já existe no histórico
         const alreadyExists = stories.some(s => s.id === story.id);
         if (!alreadyExists) {
           setStories(prev => [story, ...prev]);
@@ -69,7 +67,6 @@ const App: React.FC = () => {
         setSharedStory(story);
         setView('chat');
 
-        // Limpa a URL para não ficar com aquele código gigante poluindo a barra de endereço
         window.history.replaceState({}, '', window.location.pathname);
       } catch (e) {
         console.error("Erro ao carregar história compartilhada", e);
@@ -105,7 +102,6 @@ const App: React.FC = () => {
     let activeUniverse = currentStory?.universe || setup?.universe || 'Original';
     let activeModel = currentStory?.model || setup?.model || 'balanced';
 
-    // Se estiver em modo de visualização de compartilhado, transforma em história local definitiva ao interagir
     if (sharedStory && currentStoryId === sharedStory.id) {
        setSharedStory(null);
     }
@@ -171,9 +167,9 @@ const App: React.FC = () => {
           onSelectStory={(id) => { setSharedStory(null); setCurrentStoryId(id); setView('chat'); setIsSidebarOpen(false); }}
           onNewStory={() => { setSharedStory(null); setCurrentStoryId(null); setView('chat'); setIsSidebarOpen(false); }}
           onDeleteStory={handleDeleteStory}
-          setView={setView}
+          setView={(v) => { setView(v); setIsSidebarOpen(false); }}
           currentView={view}
-          onOpenSettings={() => setIsSettingsOpen(true)}
+          onOpenSettings={() => { setIsSettingsOpen(true); setIsSidebarOpen(false); }}
           lang={lang}
           theme={theme}
           onToggleTheme={toggleTheme}
@@ -197,13 +193,14 @@ const App: React.FC = () => {
           onExport={() => {}}
           onModelChange={(m) => setStories(s => s.map(st => st.id === currentStoryId ? {...st, model: m} : st))}
           onPublish={handlePublish}
+          onOpenSidebar={() => setIsSidebarOpen(true)}
           lang={lang}
           fontFamily={fontFamily}
           fontSize={fontSize}
         />
       )}
 
-      {view === 'community' && <CommunityView stories={communityStories} onRead={() => {}} lang={lang} />}
+      {view === 'community' && <CommunityView stories={communityStories} onRead={() => {}} onOpenSidebar={() => setIsSidebarOpen(true)} lang={lang} />}
       {view === 'ideas' && <IdeaBank onUseIdea={(idea) => { setView('chat'); handleSendMessage(idea.prompt, { title: idea.title, universe: 'Misto', model: 'balanced' }); }} />}
 
       {isSettingsOpen && (

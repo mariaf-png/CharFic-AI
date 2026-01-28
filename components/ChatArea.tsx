@@ -13,6 +13,7 @@ interface ChatAreaProps {
   onExport: () => void;
   onModelChange: (model: WritingModel) => void;
   onPublish: (story: Story) => void;
+  onOpenSidebar: () => void;
   lang: Language;
   fontFamily: FontFamily;
   fontSize: FontSize;
@@ -38,6 +39,7 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
   onDeleteStory,
   onModelChange,
   onPublish,
+  onOpenSidebar,
   lang,
   fontFamily,
   fontSize
@@ -207,47 +209,60 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
         </div>
       )}
 
-      <header className="h-16 border-b border-gray-100 dark:border-zinc-900 flex items-center justify-between px-6 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl z-20 sticky top-0">
-        {story ? (
-          <>
-            <div className="flex flex-col">
-              <h2 className="text-sm font-black truncate max-w-[200px]">{story.title}</h2>
+      <header className="h-16 border-b border-gray-100 dark:border-zinc-900 flex items-center justify-between px-4 lg:px-6 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl z-20 sticky top-0">
+        <div className="flex items-center gap-3 overflow-hidden">
+          {/* BOTÃO HAMBÚRGUER (MOBILE) */}
+          <button 
+            onClick={onOpenSidebar}
+            className="lg:hidden p-2 -ml-1 hover:bg-gray-100 dark:hover:bg-zinc-900 rounded-xl text-gray-500 dark:text-zinc-400 transition-colors"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
+
+          {story ? (
+            <div className="flex flex-col truncate">
+              <h2 className="text-sm font-black truncate max-w-[150px] md:max-w-[300px]">{story.title}</h2>
               <span className="text-[10px] text-indigo-600 font-bold uppercase tracking-widest">{story.universe}</span>
             </div>
-            <div className="relative" ref={headerMenuRef}>
-              <button onClick={() => setIsHeaderMenuOpen(!isHeaderMenuOpen)} className="p-2 hover:bg-gray-100 dark:hover:bg-zinc-900 rounded-xl transition-colors">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" /></svg>
-              </button>
-              {isHeaderMenuOpen && (
-                <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-100">
-                  <div className="p-2 space-y-1">
-                    <button onClick={generateShareLink} className="w-full text-left px-4 py-3 text-xs font-bold text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-xl flex items-center gap-3"><span>🔗</span> {t.share_link}</button>
-                    <div className="h-px bg-gray-100 dark:bg-zinc-800 my-1" />
-                    <button onClick={handleExportTXT} className="w-full text-left px-4 py-3 text-xs font-bold hover:bg-gray-50 dark:hover:bg-zinc-800 rounded-xl flex items-center gap-3"><span>📄</span> {t.save_pdf}</button>
-                    <button onClick={handleExportMarkdown} className="w-full text-left px-4 py-3 text-xs font-bold hover:bg-gray-50 dark:hover:bg-zinc-800 rounded-xl flex items-center gap-3"><span>📝</span> {t.save_markdown}</button>
-                    <div className="h-px bg-gray-100 dark:bg-zinc-800 my-1" />
-                    <button onClick={handlePublishClick} className="w-full text-left px-4 py-3 text-xs font-bold text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-xl flex items-center gap-3"><span>🌍</span> {t.publish_community}</button>
-                    <div className="h-px bg-gray-100 dark:bg-zinc-800 my-1" />
-                    <button onClick={handleDeleteChatClick} className="w-full text-left px-4 py-3 text-xs font-bold text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-xl flex items-center gap-3"><span>🗑️</span> {t.delete_chat}</button>
-                  </div>
-                </div>
-              )}
+          ) : (
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 bg-indigo-600 rounded-full animate-pulse lg:hidden" />
+              <h2 className="text-xs font-black uppercase tracking-widest text-gray-400">{t.new_story}</h2>
             </div>
-          </>
-        ) : (
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 bg-indigo-600 rounded-full animate-pulse" />
-            <h2 className="text-xs font-black uppercase tracking-widest text-gray-400">{t.new_story}</h2>
+          )}
+        </div>
+
+        {story && (
+          <div className="relative" ref={headerMenuRef}>
+            <button onClick={() => setIsHeaderMenuOpen(!isHeaderMenuOpen)} className="p-2 hover:bg-gray-100 dark:hover:bg-zinc-900 rounded-xl transition-colors">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" /></svg>
+            </button>
+            {isHeaderMenuOpen && (
+              <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-100">
+                <div className="p-2 space-y-1">
+                  <button onClick={generateShareLink} className="w-full text-left px-4 py-3 text-xs font-bold text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-xl flex items-center gap-3"><span>🔗</span> {t.share_link}</button>
+                  <div className="h-px bg-gray-100 dark:bg-zinc-800 my-1" />
+                  <button onClick={handleExportTXT} className="w-full text-left px-4 py-3 text-xs font-bold hover:bg-gray-50 dark:hover:bg-zinc-800 rounded-xl flex items-center gap-3"><span>📄</span> {t.save_pdf}</button>
+                  <button onClick={handleExportMarkdown} className="w-full text-left px-4 py-3 text-xs font-bold hover:bg-gray-50 dark:hover:bg-zinc-800 rounded-xl flex items-center gap-3"><span>📝</span> {t.save_markdown}</button>
+                  <div className="h-px bg-gray-100 dark:bg-zinc-800 my-1" />
+                  <button onClick={handlePublishClick} className="w-full text-left px-4 py-3 text-xs font-bold text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-xl flex items-center gap-3"><span>🌍</span> {t.publish_community}</button>
+                  <div className="h-px bg-gray-100 dark:bg-zinc-800 my-1" />
+                  <button onClick={handleDeleteChatClick} className="w-full text-left px-4 py-3 text-xs font-bold text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-xl flex items-center gap-3"><span>🗑️</span> {t.delete_chat}</button>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </header>
 
-      <div className="flex-1 overflow-y-auto p-6 space-y-8 custom-scrollbar">
+      <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-8 custom-scrollbar">
         {!story ? (
-          <div className="max-w-2xl mx-auto py-12 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 text-center">
+          <div className="max-w-2xl mx-auto py-8 md:py-12 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 text-center">
             <div className="space-y-2 flex flex-col items-center">
-              <div className="text-8xl mb-6 animate-page-flip">📖</div>
-              <h3 className="text-3xl font-black">{t.new_story}</h3>
+              <div className="text-6xl md:text-8xl mb-4 md:mb-6 animate-page-flip">📖</div>
+              <h3 className="text-2xl md:text-3xl font-black">{t.new_story}</h3>
               <p className="text-gray-500 dark:text-zinc-400 text-sm">Escrita colaborativa sem limites.</p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
@@ -263,10 +278,10 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
           </div>
         ) : (
           story.messages.map((msg) => (
-            <div key={msg.id} className={`group animate-in fade-in slide-in-from-bottom-2 duration-300 ${msg.role === 'user' ? 'max-w-[85%] ml-auto' : 'max-w-full'}`}>
+            <div key={msg.id} className={`group animate-in fade-in slide-in-from-bottom-2 duration-300 ${msg.role === 'user' ? 'max-w-[90%] md:max-w-[85%] ml-auto' : 'max-w-full'}`}>
               <div className="flex items-center gap-2 mb-2 px-1">
                 <span className="text-[10px] font-black uppercase tracking-widest opacity-30">{msg.role === 'user' ? (lang === 'pt' ? 'Autor' : 'Author') : 'ChatFic AI'}</span>
-                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="flex items-center gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                   <button onClick={() => handleCopy(msg.content)} className="p-1 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded text-gray-400"><svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg></button>
                   <button onClick={() => startEditing(msg)} className="p-1 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded text-gray-400"><svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg></button>
                   {msg.role === 'model' && (<button onClick={() => handleRegenerate(msg)} className="p-1 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded text-indigo-500"><svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg></button>)}
@@ -282,7 +297,7 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
                   </div>
                 </div>
               ) : (
-                <div className={`p-5 rounded-2xl whitespace-pre-wrap leading-relaxed shadow-sm ${msg.role === 'user' ? 'bg-indigo-600 text-white' : 'bg-gray-50 dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 text-gray-800 dark:text-zinc-200'}`}>{msg.content}</div>
+                <div className={`p-4 md:p-5 rounded-2xl whitespace-pre-wrap leading-relaxed shadow-sm ${msg.role === 'user' ? 'bg-indigo-600 text-white' : 'bg-gray-50 dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 text-gray-800 dark:text-zinc-200'}`}>{msg.content}</div>
               )}
             </div>
           ))
@@ -290,27 +305,27 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
         {isGenerating && (
           <div className="flex flex-col gap-3 animate-pulse max-w-[90%]">
             <div className="flex items-center gap-2 px-1"><span className="text-[10px] font-black uppercase tracking-widest text-indigo-500">{t.writing}</span></div>
-            <div className="h-32 bg-gray-100 dark:bg-zinc-900 rounded-3xl" />
+            <div className="h-24 md:h-32 bg-gray-100 dark:bg-zinc-900 rounded-3xl" />
           </div>
         )}
         <div ref={messagesEndRef} />
       </div>
 
-      <footer className="p-6 bg-white dark:bg-zinc-950 border-t border-gray-100 dark:border-zinc-900 z-20">
+      <footer className="p-4 md:p-6 bg-white dark:bg-zinc-950 border-t border-gray-100 dark:border-zinc-900 z-20">
         <form onSubmit={handleSend} className="max-w-4xl mx-auto flex flex-col gap-3">
           <div className="flex gap-2">
             <div className="relative" ref={menuRef}>
-              <button type="button" onClick={() => setIsModelMenuOpen(!isModelMenuOpen)} className="h-14 px-4 bg-gray-50 dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 rounded-2xl flex items-center gap-2 hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors">
-                <span className="text-xl">{MODEL_LABELS[selectedModel].icon}</span>
+              <button type="button" onClick={() => setIsModelMenuOpen(!isModelMenuOpen)} className="h-12 md:h-14 px-3 md:px-4 bg-gray-50 dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 rounded-2xl flex items-center gap-2 hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors">
+                <span className="text-lg md:text-xl">{MODEL_LABELS[selectedModel].icon}</span>
                 <svg xmlns="http://www.w3.org/2000/svg" className={`h-4 w-4 text-gray-400 transition-transform ${isModelMenuOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
               </button>
               {isModelMenuOpen && (
-                <div className="absolute bottom-full left-0 mb-4 w-72 bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 rounded-3xl shadow-2xl overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-200">
-                  <div className="p-3 space-y-1 max-h-[400px] overflow-y-auto custom-scrollbar">
+                <div className="absolute bottom-full left-0 mb-4 w-64 md:w-72 bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 rounded-3xl shadow-2xl overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-200">
+                  <div className="p-2 md:p-3 space-y-1 max-h-[350px] overflow-y-auto custom-scrollbar">
                     {(Object.entries(MODEL_LABELS) as [WritingModel, typeof MODEL_LABELS['balanced']][]).map(([key, info]) => (
-                      <button key={key} type="button" onClick={() => { setSelectedModel(key); onModelChange(key); setIsModelMenuOpen(false); }} className={`w-full text-left p-3 rounded-2xl transition-all flex items-start gap-3 ${selectedModel === key ? 'bg-indigo-50 dark:bg-indigo-900/30 ring-1 ring-indigo-200' : 'hover:bg-gray-50 dark:hover:bg-zinc-800'}`}>
-                        <span className="text-2xl mt-1">{info.icon}</span>
-                        <div><p className={`text-sm font-bold ${selectedModel === key ? 'text-indigo-600' : 'text-gray-700 dark:text-zinc-300'}`}>{info.label}</p><p className="text-[10px] text-gray-400 font-medium leading-tight">{info.desc}</p></div>
+                      <button key={key} type="button" onClick={() => { setSelectedModel(key); onModelChange(key); setIsModelMenuOpen(false); }} className={`w-full text-left p-2 md:p-3 rounded-2xl transition-all flex items-start gap-3 ${selectedModel === key ? 'bg-indigo-50 dark:bg-indigo-900/30 ring-1 ring-indigo-200' : 'hover:bg-gray-50 dark:hover:bg-zinc-800'}`}>
+                        <span className="text-xl md:text-2xl mt-1">{info.icon}</span>
+                        <div><p className={`text-xs md:text-sm font-bold ${selectedModel === key ? 'text-indigo-600' : 'text-gray-700 dark:text-zinc-300'}`}>{info.label}</p><p className="text-[9px] md:text-[10px] text-gray-400 font-medium leading-tight">{info.desc}</p></div>
                       </button>
                     ))}
                   </div>
@@ -318,9 +333,9 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
               )}
             </div>
             <div className="flex-1 relative group">
-              <input type="text" value={inputValue} onChange={(e) => setInputValue(e.target.value)} placeholder={t.placeholder} disabled={isGenerating} className="w-full h-14 bg-gray-50 dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 rounded-2xl px-6 pr-14 text-sm focus:ring-2 ring-indigo-500/50 outline-none disabled:opacity-50" />
-              <button type="submit" disabled={isGenerating || !inputValue.trim() || (!story && (!newTitle.trim() || !newUniverse.trim()))} className="absolute right-2 top-2 h-10 w-10 bg-indigo-600 text-white rounded-xl flex items-center justify-center shadow-lg shadow-indigo-600/20 active:scale-90 transition-all disabled:opacity-30">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" /></svg>
+              <input type="text" value={inputValue} onChange={(e) => setInputValue(e.target.value)} placeholder={t.placeholder} disabled={isGenerating} className="w-full h-12 md:h-14 bg-gray-50 dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 rounded-2xl px-4 md:px-6 pr-12 md:pr-14 text-sm focus:ring-2 ring-indigo-500/50 outline-none disabled:opacity-50" />
+              <button type="submit" disabled={isGenerating || !inputValue.trim() || (!story && (!newTitle.trim() || !newUniverse.trim()))} className="absolute right-1.5 top-1.5 h-9 w-9 md:h-11 md:w-11 bg-indigo-600 text-white rounded-xl flex items-center justify-center shadow-lg shadow-indigo-600/20 active:scale-90 transition-all disabled:opacity-30">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 md:h-5 md:w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" /></svg>
               </button>
             </div>
           </div>
