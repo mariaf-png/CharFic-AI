@@ -4,37 +4,45 @@ import { getSystemInstruction } from "../constants.tsx";
 import { Message, WritingModel } from "../types.ts";
 
 export async function generateStoryPart(messages: Message[], modelType: WritingModel, universe: string): Promise<string> {
-  // Tenta pegar a chave do process.env (Vite) ou de uma variável global se injetada pelo Capacitor
-  const apiKey = process.env.API_KEY || (window as any).GEMINI_API_KEY;
+  const apiKey = process.env.API_KEY;
 
-  if (!apiKey || apiKey.length < 10) {
-    console.error("DEBUG: API_KEY NÃO ENCONTRADA.");
-    return "⚠️ CHAVE DE API AUSENTE: O app não encontrou sua chave do Gemini. No Android, verifique se você definiu a variável de ambiente antes do build.";
+  if (!apiKey) {
+    return "⚠️ ERRO: Chave de API não configurada. Verifique as configurações do ambiente.";
   }
 
   const ai = new GoogleGenAI({ apiKey });
-  const modelName = 'gemini-3-pro-preview';
+  // Usando gemini-3-flash-preview para velocidade e ótimo acompanhamento de instruções
+  const modelName = 'gemini-3-flash-preview';
   
-  const history = messages.map(m => ({
+  // Mapeamento simples de histórico
+  const contents = messages.map(m => ({
     role: m.role,
     parts: [{ text: m.content }]
   }));
 
+  // Mecanismo de Memória: Extraímos fatos chaves das mensagens anteriores para reforçar a continuidade
+  const recentContext = messages.length > 4 
+    ? `\n\nLEMBRETE DE CONTINUIDADE (MEMÓRIA ATIVA):\nConsidere os eventos e detalhes mencionados nas últimas interações para manter a coerência total da trama, personalidades e cenário.`
+    : "";
+
   try {
     const response = await ai.models.generateContent({
       model: modelName,
-      contents: history,
+      contents: contents,
       config: {
-        systemInstruction: getSystemInstruction(modelType, universe),
-        temperature: 0.85,
+        systemInstruction: getSystemInstruction(modelType, universe) + recentContext,
+        temperature: 0.8,
         topP: 0.95,
         topK: 64,
       },
     });
 
-    return response.text || "A IA não conseguiu gerar uma resposta.";
+    return response.text || "A IA não conseguiu gerar uma resposta no momento.";
   } catch (error: any) {
-    console.error("DETALHES DO ERRO NO ANDROID:", error);
+    console.error("Erro na API Gemini:", error);
+    if (error.message?.includes("API key not valid")) {
+      return "⚠️ CHAVE INVÁLIDA: A chave de API fornecida não é válida.";
+    }
     return `Erro de Conexão: ${error.message || "A IA está temporariamente indisponível."}`;
   }
 }

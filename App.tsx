@@ -48,43 +48,25 @@ const App: React.FC = () => {
   
   const [sharedStory, setSharedStory] = useState<Story | null>(null);
 
-  // Sistema de importação de história via URL (Share Link)
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const shareData = urlParams.get('share');
     if (shareData) {
       try {
-        const cleanShareData = shareData.replace(/ /g, '+');
-        const decoded = decodeURIComponent(escape(atob(cleanShareData)));
+        const decoded = decodeURIComponent(escape(atob(shareData.replace(/ /g, '+'))));
         const story = JSON.parse(decoded) as Story;
-        
-        const alreadyExists = stories.some(s => s.id === story.id);
-        if (!alreadyExists) {
-          setStories(prev => [story, ...prev]);
-        }
-        
+        if (!stories.some(s => s.id === story.id)) setStories(prev => [story, ...prev]);
         setCurrentStoryId(story.id);
         setSharedStory(story);
         setView('chat');
-
         window.history.replaceState({}, '', window.location.pathname);
-      } catch (e) {
-        console.error("Erro ao carregar história compartilhada", e);
-      }
+      } catch (e) { console.error(e); }
     }
-  }, [stories.length]);
+  }, []);
 
-  useEffect(() => {
-    localStorage.setItem('chatfic_stories', JSON.stringify(stories));
-  }, [stories]);
-
-  useEffect(() => {
-    localStorage.setItem('chatfic_community', JSON.stringify(communityStories));
-  }, [communityStories]);
-
-  useEffect(() => {
-    localStorage.setItem('chatfic_current_id', currentStoryId || '');
-  }, [currentStoryId]);
+  useEffect(() => { localStorage.setItem('chatfic_stories', JSON.stringify(stories)); }, [stories]);
+  useEffect(() => { localStorage.setItem('chatfic_community', JSON.stringify(communityStories)); }, [communityStories]);
+  useEffect(() => { localStorage.setItem('chatfic_current_id', currentStoryId || ''); }, [currentStoryId]);
 
   useEffect(() => {
     const root = window.document.documentElement;
@@ -92,6 +74,10 @@ const App: React.FC = () => {
     else root.classList.remove('dark');
     localStorage.setItem('chatfic_theme', theme);
   }, [theme]);
+
+  useEffect(() => {
+    localStorage.setItem('chatfic_lang', lang);
+  }, [lang]);
 
   const toggleTheme = () => setTheme(prev => prev === 'light' ? 'dark' : 'light');
 
@@ -101,10 +87,6 @@ const App: React.FC = () => {
     let activeStoryId = currentStoryId;
     let activeUniverse = currentStory?.universe || setup?.universe || 'Original';
     let activeModel = currentStory?.model || setup?.model || 'balanced';
-
-    if (sharedStory && currentStoryId === sharedStory.id) {
-       setSharedStory(null);
-    }
 
     if (!activeStoryId && setup) {
       const newStory: Story = {
@@ -127,33 +109,40 @@ const App: React.FC = () => {
     setStories(prev => prev.map(s => s.id === activeStoryId ? { ...s, messages: [...s.messages, userMsg], updatedAt: Date.now() } : s));
     
     setIsGenerating(true);
-    
     try {
-      const currentStoryRef = stories.find(s => s.id === activeStoryId) || (activeStoryId === sharedStory?.id ? sharedStory : null);
-      const messagesToGen = currentStoryRef ? [...currentStoryRef.messages, userMsg] : [userMsg];
+      const storyRef = stories.find(s => s.id === activeStoryId) || (activeStoryId === sharedStory?.id ? sharedStory : null);
+      const messagesToGen = storyRef ? [...storyRef.messages, userMsg] : [userMsg];
       const aiResponse = await generateStoryPart(messagesToGen, activeModel, activeUniverse);
-      
       const aiMsg: Message = { id: (Date.now() + 1).toString(), role: 'model', content: aiResponse, timestamp: Date.now() };
       setStories(prev => prev.map(s => s.id === activeStoryId ? { ...s, messages: [...s.messages, aiMsg], updatedAt: Date.now() } : s));
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setIsGenerating(false);
+    } catch (e) { console.error(e); } finally { setIsGenerating(false); }
+  };
+
+  const handleExport = (format: 'md' | 'pdf') => {
+    if (!currentStory) return;
+    if (format === 'pdf') {
+      window.print();
+    } else {
+      let content = `# ${currentStory.title}\n\nUniverso: ${currentStory.universe}\n\n---\n\n`;
+      currentStory.messages.forEach(m => {
+        if (m.role === 'model') content += `${m.content}\n\n---\n\n`;
+      });
+      const blob = new Blob([content], { type: 'text/markdown' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${currentStory.title.replace(/\s/g, '_')}.md`;
+      a.click();
     }
   };
 
   const handlePublish = (story: Story) => {
-    if (!communityStories.some(s => s.id === story.id)) {
-      setCommunityStories(prev => [story, ...prev]);
-    }
+    if (!communityStories.some(s => s.id === story.id)) setCommunityStories(prev => [story, ...prev]);
   };
 
   const handleDeleteStory = (id: string) => {
     setStories(s => s.filter(x => x.id !== id));
-    if(currentStoryId === id) {
-      setCurrentStoryId(null);
-      setSharedStory(null);
-    }
+    if(currentStoryId === id) { setCurrentStoryId(null); setSharedStory(null); }
   };
 
   return (
@@ -190,10 +179,11 @@ const App: React.FC = () => {
           onEditMessage={(mid, cont) => setStories(s => s.map(st => st.id === currentStoryId ? {...st, messages: st.messages.map(m => m.id === mid ? {...m, content: cont} : m)} : st))}
           onDeleteMessage={(mid) => setStories(prev => prev.map(s => s.id === currentStoryId ? { ...s, messages: s.messages.filter(m => m.id !== mid) } : s))}
           onDeleteStory={handleDeleteStory}
-          onExport={() => {}}
+          onExport={handleExport}
           onModelChange={(m) => setStories(s => s.map(st => st.id === currentStoryId ? {...st, model: m} : st))}
           onPublish={handlePublish}
           onOpenSidebar={() => setIsSidebarOpen(true)}
+          onOpenSettings={() => setIsSettingsOpen(true)}
           lang={lang}
           fontFamily={fontFamily}
           fontSize={fontSize}
@@ -216,6 +206,10 @@ const App: React.FC = () => {
           setFontFamily={setFontFamily}
           fontSize={fontSize}
           setFontSize={setFontSize}
+          currentStory={currentStory}
+          onPublishStory={handlePublish}
+          onDeleteStory={handleDeleteStory}
+          onExport={handleExport}
         />
       )}
     </Layout>
