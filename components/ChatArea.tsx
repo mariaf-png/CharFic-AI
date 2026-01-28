@@ -9,6 +9,7 @@ interface ChatAreaProps {
   isGenerating: boolean;
   onEditMessage: (messageId: string, newContent: string) => void;
   onDeleteMessage: (messageId: string) => void;
+  onRegenerateMessage: (messageId: string) => void;
   onDeleteStory: (storyId: string) => void;
   onExport: (format: 'md' | 'pdf') => void;
   onModelChange: (model: WritingModel) => void;
@@ -35,6 +36,9 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
   story, 
   onSendMessage, 
   isGenerating, 
+  onEditMessage,
+  onDeleteMessage,
+  onRegenerateMessage,
   onModelChange,
   onOpenSidebar,
   onOpenSettings,
@@ -47,6 +51,11 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
   const [newUniverse, setNewUniverse] = useState('');
   const [selectedModel, setSelectedModel] = useState<WritingModel>('balanced');
   const [isModelMenuOpen, setIsModelMenuOpen] = useState(false);
+  const [copySuccess, setCopySuccess] = useState<string | null>(null);
+  
+  // States for editing
+  const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
+  const [editValue, setEditValue] = useState('');
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -79,6 +88,26 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
     setInputValue('');
   };
 
+  const handleCopy = (content: string, id: string) => {
+    navigator.clipboard.writeText(content).then(() => {
+      setCopySuccess(id);
+      setTimeout(() => setCopySuccess(null), 2000);
+    });
+  };
+
+  const startEditing = (msg: Message) => {
+    setEditingMessageId(msg.id);
+    setEditValue(msg.content);
+  };
+
+  const saveEdit = () => {
+    if (editingMessageId && editValue.trim()) {
+      onEditMessage(editingMessageId, editValue);
+      setEditingMessageId(null);
+      setEditValue('');
+    }
+  };
+
   const renderContent = (content: string) => {
     const lines = content.split('\n');
     return lines.map((line, i) => {
@@ -86,8 +115,6 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
 
       const isChapter = line.trim().match(/^Capítulo/i);
       
-      // Markdown-ish processing: **bold** and *italic*
-      // First, handle bold
       let processed = line;
       const parts = processed.split(/(\*\*.*?\*\*|\*.*?\*)/g);
       
@@ -103,7 +130,7 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
 
       if (isChapter) {
         return (
-          <h2 key={i} className="text-4xl md:text-6xl font-black text-indigo-600 dark:text-indigo-400 mt-12 mb-8 tracking-tighter leading-none animate-in fade-in slide-in-from-left-4 duration-500">
+          <h2 key={i} className="text-3xl md:text-5xl font-black text-indigo-600 dark:text-indigo-400 mt-10 mb-6 tracking-tighter leading-none">
             {elements}
           </h2>
         );
@@ -169,13 +196,76 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
           </div>
         ) : (
           <div className="max-w-4xl mx-auto space-y-12 pb-10">
-            {story.messages.map((msg) => (
-              <div key={msg.id} className={`group animate-in fade-in slide-in-from-bottom-2 duration-400 ${msg.role === 'user' ? 'ml-auto max-w-[90%]' : 'max-w-full'}`}>
-                <div className="flex items-center gap-3 mb-3 px-1">
+            {story.messages.map((msg, index) => (
+              <div key={msg.id} className={`group relative animate-in fade-in slide-in-from-bottom-2 duration-400 ${msg.role === 'user' ? 'ml-auto max-w-[90%]' : 'max-w-full'}`}>
+                <div className="flex items-center justify-between mb-3 px-1">
                   <span className="text-[10px] font-black uppercase tracking-widest opacity-25">{msg.role === 'user' ? 'Autor' : 'IA'}</span>
+                  
+                  <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button 
+                      onClick={() => startEditing(msg)}
+                      className="p-2 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-lg text-gray-400 hover:text-indigo-600 transition-colors"
+                      title={t.edit}
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                    </button>
+                    <button 
+                      onClick={() => handleCopy(msg.content, msg.id)}
+                      className="p-2 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-lg text-gray-400 hover:text-indigo-600 transition-colors"
+                      title="Copiar"
+                    >
+                      {copySuccess === msg.id ? (
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-green-500" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
+                      ) : (
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" /></svg>
+                      )}
+                    </button>
+                    {msg.role === 'model' && index === story.messages.length - 1 && (
+                      <button 
+                        onClick={() => onRegenerateMessage(msg.id)}
+                        disabled={isGenerating}
+                        className="p-2 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-lg text-gray-400 hover:text-indigo-600 transition-colors disabled:opacity-30"
+                        title="Regenerar"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                      </button>
+                    )}
+                    <button 
+                      onClick={() => onDeleteMessage(msg.id)}
+                      className="p-2 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-lg text-gray-400 hover:text-red-500 transition-colors"
+                      title="Apagar"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                    </button>
+                  </div>
                 </div>
-                <div className={`p-6 md:p-8 rounded-[2.5rem] shadow-sm ${msg.role === 'user' ? 'bg-indigo-600 text-white font-bold' : 'bg-gray-50 dark:bg-zinc-900 text-gray-800 dark:text-zinc-100 border border-gray-100 dark:border-zinc-800'}`}>
-                  {renderContent(msg.content)}
+                <div className={`p-6 md:p-8 rounded-[2.5rem] shadow-sm transition-all ${msg.role === 'user' ? 'bg-indigo-600 text-white font-bold' : 'bg-gray-50 dark:bg-zinc-900 text-gray-800 dark:text-zinc-100 border border-gray-100 dark:border-zinc-800'}`}>
+                  {editingMessageId === msg.id ? (
+                    <div className="space-y-4">
+                      <textarea
+                        value={editValue}
+                        onChange={(e) => setEditValue(e.target.value)}
+                        className={`w-full bg-white/10 dark:bg-black/20 border-2 border-white/20 dark:border-white/5 rounded-2xl p-4 outline-none focus:border-white/40 min-h-[150px] resize-none ${msg.role === 'user' ? 'text-white' : 'text-gray-800 dark:text-zinc-100'}`}
+                        autoFocus
+                      />
+                      <div className="flex justify-end gap-2">
+                        <button 
+                          onClick={() => setEditingMessageId(null)}
+                          className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest ${msg.role === 'user' ? 'hover:bg-white/10 text-white' : 'hover:bg-gray-200 dark:hover:bg-zinc-800 text-gray-500'}`}
+                        >
+                          {t.cancel}
+                        </button>
+                        <button 
+                          onClick={saveEdit}
+                          className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest ${msg.role === 'user' ? 'bg-white text-indigo-600 shadow-xl' : 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20'}`}
+                        >
+                          {t.save}
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    renderContent(msg.content)
+                  )}
                 </div>
               </div>
             ))}
@@ -236,13 +326,6 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
           </div>
         </form>
       </footer>
-      <style>{`
-        @media print {
-          body * { visibility: hidden; }
-          .print-area, .print-area * { visibility: visible; }
-          .print-area { position: absolute; left: 0; top: 0; width: 100%; height: auto; padding: 20px; }
-        }
-      `}</style>
     </div>
   );
 };

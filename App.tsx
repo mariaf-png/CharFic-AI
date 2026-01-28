@@ -113,9 +113,40 @@ const App: React.FC = () => {
       const storyRef = stories.find(s => s.id === activeStoryId) || (activeStoryId === sharedStory?.id ? sharedStory : null);
       const messagesToGen = storyRef ? [...storyRef.messages, userMsg] : [userMsg];
       const aiResponse = await generateStoryPart(messagesToGen, activeModel, activeUniverse);
+      
       const aiMsg: Message = { id: (Date.now() + 1).toString(), role: 'model', content: aiResponse, timestamp: Date.now() };
       setStories(prev => prev.map(s => s.id === activeStoryId ? { ...s, messages: [...s.messages, aiMsg], updatedAt: Date.now() } : s));
-    } catch (e) { console.error(e); } finally { setIsGenerating(false); }
+    } catch (e) { 
+      console.error(e); 
+    } finally { 
+      setIsGenerating(false); 
+    }
+  };
+
+  const handleRegenerateMessage = async (messageId: string) => {
+    if (!currentStoryId || isGenerating) return;
+
+    const story = stories.find(s => s.id === currentStoryId);
+    if (!story) return;
+
+    // Remove the message being regenerated and any messages after it
+    const msgIndex = story.messages.findIndex(m => m.id === messageId);
+    if (msgIndex === -1) return;
+
+    const messagesBefore = story.messages.slice(0, msgIndex);
+    
+    setStories(prev => prev.map(s => s.id === currentStoryId ? { ...s, messages: messagesBefore, updatedAt: Date.now() } : s));
+    
+    setIsGenerating(true);
+    try {
+      const aiResponse = await generateStoryPart(messagesBefore, story.model, story.universe);
+      const aiMsg: Message = { id: Date.now().toString(), role: 'model', content: aiResponse, timestamp: Date.now() };
+      setStories(prev => prev.map(s => s.id === currentStoryId ? { ...s, messages: [...messagesBefore, aiMsg], updatedAt: Date.now() } : s));
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   const handleExport = (format: 'md' | 'pdf') => {
@@ -143,6 +174,18 @@ const App: React.FC = () => {
   const handleDeleteStory = (id: string) => {
     setStories(s => s.filter(x => x.id !== id));
     if(currentStoryId === id) { setCurrentStoryId(null); setSharedStory(null); }
+  };
+
+  const handleDeleteMessage = (id: string) => {
+    setStories(prev => prev.map(s => s.id === currentStoryId ? { ...s, messages: s.messages.filter(m => m.id !== id) } : s));
+  };
+
+  const handleEditMessage = (messageId: string, newContent: string) => {
+    setStories(prev => prev.map(s => 
+      s.id === currentStoryId 
+        ? { ...s, messages: s.messages.map(m => m.id === messageId ? { ...m, content: newContent } : m) } 
+        : s
+    ));
   };
 
   return (
@@ -176,8 +219,9 @@ const App: React.FC = () => {
           story={currentStory} 
           onSendMessage={handleSendMessage}
           isGenerating={isGenerating}
-          onEditMessage={(mid, cont) => setStories(s => s.map(st => st.id === currentStoryId ? {...st, messages: st.messages.map(m => m.id === mid ? {...m, content: cont} : m)} : st))}
-          onDeleteMessage={(mid) => setStories(prev => prev.map(s => s.id === currentStoryId ? { ...s, messages: s.messages.filter(m => m.id !== mid) } : s))}
+          onEditMessage={handleEditMessage}
+          onDeleteMessage={handleDeleteMessage}
+          onRegenerateMessage={handleRegenerateMessage}
           onDeleteStory={handleDeleteStory}
           onExport={handleExport}
           onModelChange={(m) => setStories(s => s.map(st => st.id === currentStoryId ? {...st, model: m} : st))}

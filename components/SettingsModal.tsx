@@ -32,11 +32,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   const [name, setName] = useState('');
   
   const t = TRANSLATIONS[lang];
-  const hasApiKey = !!process.env.API_KEY && process.env.API_KEY.length > 5;
 
   const handleAuth = (e: React.FormEvent) => {
     e.preventDefault();
-    // Simulação de autenticação
     setUser({ 
       id: Date.now().toString(), 
       name: name || 'Escritor Criativo', 
@@ -128,15 +126,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             )}
           </section>
 
-          {/* Status do Sistema */}
-          <section className="space-y-3">
-             <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Status do Sistema</h3>
-             <div className={`p-4 rounded-2xl text-[11px] font-black flex items-center gap-3 ${hasApiKey ? 'bg-green-50 text-green-600 dark:bg-green-900/10' : 'bg-red-50 text-red-600 dark:bg-red-900/10'}`}>
-                <div className={`w-2.5 h-2.5 rounded-full ${hasApiKey ? 'bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]' : 'bg-red-500 animate-pulse'}`}></div>
-                {hasApiKey ? 'MOTO DE IA ATIVO' : 'SISTEMA DESCONECTADO'}
-             </div>
-          </section>
-
           {/* Preferências Globais */}
           <section className="space-y-4">
             <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Preferências Globais</h3>
@@ -226,7 +215,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         </div>
 
         <div className="p-8 border-t border-gray-50 dark:border-zinc-800 text-center bg-gray-50/50 dark:bg-zinc-900/50">
-          <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">ChatFic AI • Build 1.7</p>
+          <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">ChatFic AI • Build 1.9</p>
         </div>
       </div>
     </div>

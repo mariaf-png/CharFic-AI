@@ -40,7 +40,9 @@ export const TRANSLATIONS = {
     delete_action: "Sim, apagar",
     cancel: "Cancelar",
     view_mode: "Modo Leitura",
-    exit_view: "Sair da Leitura"
+    exit_view: "Sair da Leitura",
+    edit: "Editar",
+    save: "Salvar"
   },
   en: {
     settings: "Settings",
@@ -80,7 +82,9 @@ export const TRANSLATIONS = {
     delete_action: "Yes, delete",
     cancel: "Cancel",
     view_mode: "Reader Mode",
-    exit_view: "Exit Reader"
+    exit_view: "Exit Reader",
+    edit: "Edit",
+    save: "Save"
   }
 };
 
