@@ -4,9 +4,7 @@ import { getSystemInstruction } from "../constants.tsx";
 import { Message, WritingModel } from "../types.ts";
 
 export async function generateStoryPart(messages: Message[], modelType: WritingModel, universe: string): Promise<string> {
-  // Obter a chave diretamente do ambiente. Se não houver, o SDK falhará normalmente.
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || "" });
-  
   const modelName = 'gemini-3-flash-preview';
   
   const contents = messages.map(m => ({
@@ -36,15 +34,10 @@ export async function generateStoryPart(messages: Message[], modelType: WritingM
     console.error("Erro na API Gemini:", error);
     
     const errorMsg = error.message || "";
-    
-    if (errorMsg.includes("API key not valid") || errorMsg.includes("Requested entity was not found") || errorMsg.includes("403") || errorMsg.includes("401")) {
-      return "⚠️ Erro de Autorização: A chave de API configurada no sistema parece ser inválida ou não tem permissão para este modelo.";
-    }
-    
     if (errorMsg.includes("rate limit") || errorMsg.includes("429")) {
       return "⚠️ Limite Excedido: Muitas requisições em pouco tempo. Aguarde um instante.";
     }
 
-    return `Erro de Conexão: ${errorMsg || "A IA está temporariamente indisponível."}`;
+    return `Erro de Conexão: A IA está temporariamente indisponível. Verifique sua conexão.`;
   }
 }

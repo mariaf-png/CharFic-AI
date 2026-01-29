@@ -181,7 +181,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         </div>
 
         <div className="p-8 border-t border-gray-50 dark:border-zinc-800 text-center bg-gray-50/50 dark:bg-zinc-900/50">
-          <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">ChatFic AI • Build 2.0</p>
+          <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">ChatFic AI • Build 2.2</p>
         </div>
       </div>
     </div>

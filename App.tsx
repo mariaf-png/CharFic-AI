@@ -67,6 +67,7 @@ const App: React.FC = () => {
 
   useEffect(() => { localStorage.setItem('chatfic_stories', JSON.stringify(stories)); }, [stories]);
   useEffect(() => { localStorage.setItem('chatfic_community', JSON.stringify(communityStories)); }, [communityStories]);
+  
   useEffect(() => { 
     if (currentStoryId) {
       localStorage.setItem('chatfic_current_id', currentStoryId); 
@@ -82,18 +83,12 @@ const App: React.FC = () => {
     localStorage.setItem('chatfic_theme', theme);
   }, [theme]);
 
-  useEffect(() => {
-    localStorage.setItem('chatfic_lang', lang);
-  }, [lang]);
-
   const toggleTheme = () => setTheme(prev => prev === 'light' ? 'dark' : 'light');
-
-  const currentStory = stories.find(s => s.id === currentStoryId) || sharedStory || null;
 
   const handleSendMessage = async (content: string, setup?: { title: string, universe: string, model: WritingModel }) => {
     let activeStoryId = currentStoryId;
-    let activeUniverse = currentStory?.universe || setup?.universe || 'Original';
-    let activeModel = currentStory?.model || setup?.model || 'balanced';
+    let activeUniverse = stories.find(s => s.id === activeStoryId)?.universe || setup?.universe || 'Original';
+    let activeModel = stories.find(s => s.id === activeStoryId)?.model || setup?.model || 'balanced';
 
     if (!activeStoryId && setup) {
       const newStory: Story = {
@@ -116,39 +111,58 @@ const App: React.FC = () => {
     setStories(prev => prev.map(s => s.id === activeStoryId ? { ...s, messages: [...s.messages, userMsg], updatedAt: Date.now() } : s));
     
     setIsGenerating(true);
+    
     try {
-      const storyRef = stories.find(s => s.id === activeStoryId) || (activeStoryId === sharedStory?.id ? sharedStory : null);
+      const storyRef = stories.find(s => s.id === activeStoryId);
       const messagesToGen = storyRef ? [...storyRef.messages, userMsg] : [userMsg];
       const aiResponse = await generateStoryPart(messagesToGen, activeModel, activeUniverse);
       
       const aiMsg: Message = { id: (Date.now() + 1).toString(), role: 'model', content: aiResponse, timestamp: Date.now() };
       setStories(prev => prev.map(s => s.id === activeStoryId ? { ...s, messages: [...s.messages, aiMsg], updatedAt: Date.now() } : s));
-    } catch (e) { 
+    } catch (e: any) { 
       console.error(e); 
     } finally { 
       setIsGenerating(false); 
     }
   };
 
+  const handleDeleteStory = (id: string) => {
+    if (currentStoryId === id) {
+      setCurrentStoryId(null);
+      localStorage.removeItem('chatfic_current_id');
+    }
+    if (sharedStory && sharedStory.id === id) setSharedStory(null);
+    
+    setStories(prev => {
+      const updated = prev.filter(s => s.id !== id);
+      localStorage.setItem('chatfic_stories', JSON.stringify(updated));
+      return updated;
+    });
+    setView('chat');
+  };
+
+  const handleEditMessage = (messageId: string, newContent: string) => {
+    setStories(prev => prev.map(s => s.id === currentStoryId ? { ...s, messages: s.messages.map(m => m.id === messageId ? { ...m, content: newContent } : m) } : s));
+  };
+
+  const handleDeleteMessage = (id: string) => {
+    setStories(prev => prev.map(s => s.id === currentStoryId ? { ...s, messages: s.messages.filter(m => m.id !== id) } : s));
+  };
+
   const handleRegenerateMessage = async (messageId: string) => {
     if (!currentStoryId || isGenerating) return;
-
     const story = stories.find(s => s.id === currentStoryId);
     if (!story) return;
-
     const msgIndex = story.messages.findIndex(m => m.id === messageId);
     if (msgIndex === -1) return;
-
     const messagesBefore = story.messages.slice(0, msgIndex);
-    
     setStories(prev => prev.map(s => s.id === currentStoryId ? { ...s, messages: messagesBefore, updatedAt: Date.now() } : s));
-    
     setIsGenerating(true);
     try {
       const aiResponse = await generateStoryPart(messagesBefore, story.model, story.universe);
       const aiMsg: Message = { id: Date.now().toString(), role: 'model', content: aiResponse, timestamp: Date.now() };
       setStories(prev => prev.map(s => s.id === currentStoryId ? { ...s, messages: [...messagesBefore, aiMsg], updatedAt: Date.now() } : s));
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
     } finally {
       setIsGenerating(false);
@@ -156,14 +170,11 @@ const App: React.FC = () => {
   };
 
   const handleExport = (format: 'md' | 'pdf') => {
+    const currentStory = stories.find(s => s.id === currentStoryId) || sharedStory;
     if (!currentStory) return;
-    if (format === 'pdf') {
-      window.print();
-    } else {
+    if (format === 'pdf') { window.print(); } else {
       let content = `# ${currentStory.title}\n\nUniverso: ${currentStory.universe}\n\n---\n\n`;
-      currentStory.messages.forEach(m => {
-        if (m.role === 'model') content += `${m.content}\n\n---\n\n`;
-      });
+      currentStory.messages.forEach(m => { if (m.role === 'model') content += `${m.content}\n\n---\n\n`; });
       const blob = new Blob([content], { type: 'text/markdown' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -174,36 +185,15 @@ const App: React.FC = () => {
   };
 
   const handlePublish = (story: Story) => {
-    if (!communityStories.some(s => s.id === story.id)) setCommunityStories(prev => [story, ...prev]);
-  };
-
-  const handleDeleteStory = (id: string) => {
-    // 1. Removemos do array de histórias primeiro
-    setStories(prev => prev.filter(x => x.id !== id));
-    
-    // 2. Limpamos os IDs atuais SE for a história que estamos vendo
-    if (currentStoryId === id) {
-      setCurrentStoryId(null);
-      localStorage.removeItem('chatfic_current_id');
-    }
-    if (sharedStory && sharedStory.id === id) {
-      setSharedStory(null);
-    }
-    
-    // 3. Voltamos para a view de chat limpa
-    setView('chat');
-  };
-
-  const handleDeleteMessage = (id: string) => {
-    setStories(prev => prev.map(s => s.id === currentStoryId ? { ...s, messages: s.messages.filter(m => m.id !== id) } : s));
-  };
-
-  const handleEditMessage = (messageId: string, newContent: string) => {
-    setStories(prev => prev.map(s => 
-      s.id === currentStoryId 
-        ? { ...s, messages: s.messages.map(m => m.id === messageId ? { ...m, content: newContent } : m) } 
-        : s
-    ));
+    const storyToPublish = { 
+      ...story, 
+      authorName: story.authorName || user?.name || 'Anônimo' 
+    };
+    setCommunityStories(prev => {
+      if (prev.some(s => s.id === story.id)) return prev;
+      return [storyToPublish, ...prev];
+    });
+    alert(TRANSLATIONS[lang].published_success);
   };
 
   return (
@@ -226,15 +216,9 @@ const App: React.FC = () => {
         />
       }
     >
-      {sharedStory && (
-        <div className="bg-indigo-600 text-white px-4 py-2 text-center text-[10px] font-black uppercase tracking-widest animate-in fade-in slide-in-from-top-2 z-50">
-          {TRANSLATIONS[lang].view_mode} • <button onClick={() => { setSharedStory(null); setCurrentStoryId(null); }} className="underline ml-2">{TRANSLATIONS[lang].exit_view}</button>
-        </div>
-      )}
-
       {view === 'chat' && (
         <ChatArea 
-          story={currentStory} 
+          story={stories.find(s => s.id === currentStoryId) || sharedStory || null} 
           onSendMessage={handleSendMessage}
           isGenerating={isGenerating}
           onEditMessage={handleEditMessage}
@@ -268,7 +252,7 @@ const App: React.FC = () => {
           setFontFamily={setFontFamily}
           fontSize={fontSize}
           setFontSize={setFontSize}
-          currentStory={currentStory}
+          currentStory={stories.find(s => s.id === currentStoryId) || null}
           onPublishStory={handlePublish}
           onDeleteStory={handleDeleteStory}
           onExport={handleExport}

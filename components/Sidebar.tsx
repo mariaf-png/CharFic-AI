@@ -24,7 +24,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <div className="flex flex-col h-full bg-white dark:bg-zinc-950">
-      {/* Logo e Theme Toggle */}
       <div className="p-6 flex items-center justify-between border-b border-gray-50 dark:border-zinc-900">
         <div className="flex items-center gap-3">
           <span className="text-3xl">📖</span>
@@ -71,13 +70,26 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <div className="px-4 py-6 text-xs text-gray-400 italic text-center bg-gray-50/50 dark:bg-zinc-900/50 rounded-2xl">Nenhuma história...</div>
           ) : (
             stories.map(story => (
-              <button
-                key={story.id}
-                onClick={() => onSelectStory(story.id)}
-                className={`w-full text-left px-4 py-3.5 rounded-2xl text-sm font-semibold truncate transition-all ${currentStoryId === story.id && currentView === 'chat' ? 'bg-indigo-600 text-white shadow-md' : 'hover:bg-gray-50 dark:hover:bg-zinc-900 text-gray-600 dark:text-zinc-400'}`}
-              >
-                {story.title}
-              </button>
+              <div key={story.id} className="group relative">
+                <button
+                  onClick={() => onSelectStory(story.id)}
+                  className={`w-full text-left px-4 py-3.5 pr-12 rounded-2xl text-sm font-semibold truncate transition-all ${currentStoryId === story.id && currentView === 'chat' ? 'bg-indigo-600 text-white shadow-md' : 'hover:bg-gray-50 dark:hover:bg-zinc-900 text-gray-600 dark:text-zinc-400'}`}
+                >
+                  {story.title}
+                </button>
+                <button 
+                  onClick={(e) => { 
+                    e.stopPropagation(); 
+                    if(window.confirm(t.delete_confirm)) {
+                      onDeleteStory(story.id);
+                    }
+                  }}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-2 text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all z-10"
+                  title={t.delete_chat}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                </button>
+              </div>
             ))
           )}
         </div>
